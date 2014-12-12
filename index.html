@@ -1,0 +1,179 @@
+
+<style>
+
+    body {
+        font-family: Helvetica, sans-serif;
+        color: 
+    }
+
+    canvas {
+        background: #ddd;
+    }
+
+    .container {
+        position: relative;
+        width: 500px;
+        height: 500px;
+    }
+
+    .poster {
+        box-sizing: border-box;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 1);
+        color: #eee;
+        font-weight: bold;
+        padding-top: 240px;
+        text-align: center;
+        top: 0;
+        left: 0;
+    }
+
+    .disolve {
+        -webkit-animation-duration: 1s;
+        -webkit-animation-name: disolve;
+        -webkit-animation-fill-mode:forwards
+    }
+
+    @-webkit-keyframes disolve {
+
+        from {
+            background-color: rgba(0, 0, 0, 1);
+        }
+
+        to {
+            background-color: rgba(0, 0, 0, 0);
+        }
+
+    }
+</style>
+<div class="container">
+    <div class="poster">Play</div>
+    <canvas id="canvas" width=500 height=500></canvas>
+</div>
+
+<script src="vector2d.js"></script>
+<script>
+
+    var TWO_PI = Math.PI * 2;
+
+    var StateMachine = function(state) {
+        this.beforeHandlers = {};
+        this.whileHandlers = {};
+        this.afterHandlers = {};
+        this.state = state;
+    }
+
+    StateMachine.prototype.setState = function(state) {
+        this.doAfter(this.state);
+        this.state = state;
+        this.doBefore(this.state);
+    };
+
+    StateMachine.prototype.doBefore = function(state, fn) {
+        this.beforeHandlers[state] = fn;
+    };
+
+    StateMachine.prototype.doWhile = function(state, fn) {
+        this.whileHandlers[state] = fn;
+    };
+
+    StateMachine.prototype.doAfter = function(state, fn) {
+        this.afterHandlers[state] = fn;
+    };
+
+    StateMachine.prototype.go = function() {
+        this.whileHandlers[this.state].call(this);
+    }
+
+    var Ball = function(pos) {
+        this.pos = pos;
+        this.size = 1;
+        this.targetSize = 10;
+        this.fill = '#666';
+        this.growDelta = .7;
+        StateMachine.call(this, 'GROW');
+        this.initStates();
+        this.acc = new Vector2d(0, 0);
+        this.vel = new Vector2d(0, 0);
+        this.gravity = new Vector2d(0, .9);
+    };
+
+    Ball.prototype = new StateMachine;
+
+    Ball.prototype.initStates = function() {
+        this.doWhile('GROW', this.grow);
+        this.doWhile('FALL', this.fall);
+        this.doWhile('DEAD', function() {});
+    };
+
+    Ball.prototype.draw = function(ctx) {
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.beginPath();
+        ctx.scale(this.size, this.size);
+        ctx.arc(0,0, 1, 0, TWO_PI);
+        ctx.fillStyle = this.fill;
+        ctx.fill();
+        ctx.restore();
+    };
+
+    Ball.prototype.update = function() {
+        this.go();
+    };
+
+    Ball.prototype.grow = function() {
+        if (this.size <= this.targetSize) {
+            this.size += this.growDelta * (this.size / 2);
+        } else {
+            this.setState('FALL');
+        }
+    };
+
+    Ball.prototype.fall = function() {
+        this.vel.add(this.gravity.get());
+        this.vel.add(this.acc.get());
+        this.pos.add(this.vel.get());
+        this.acc.mult(0);
+        if (this.pos.y > (500 + this.size / 2)) {
+            this.setState('DEAD');
+        }
+    };
+
+    var ctx = canvas.getContext('2d');
+    var playBtn = document.querySelector('.poster');
+    var ball;
+    var pos;
+
+    var newBall = function() {
+        pos = new Vector2d(250, 50);
+        ball = new Ball(pos);
+    }
+
+    var run = function() {
+        requestAnimationFrame(run);
+        ctx.clearRect(0, 0, 500, 500);
+        if (ball.state === 'DEAD') {
+            newBall();
+        } else {
+            ball.update();
+            ball.draw(ctx);
+        }
+    }
+
+    var hidePoster = function() {
+        playBtn.innerHTML = '';
+        playBtn.classList.add('disolve');
+    }
+
+    var start = function() {
+        hidePoster();
+        newBall();
+        run();
+    }
+
+    playBtn.addEventListener('click', start);
+
+
+</script>
