@@ -165,6 +165,7 @@
     var hidePoster = function() {
         playBtn.innerHTML = '';
         playBtn.classList.add('disolve');
+        playBtn.removeEventListener('click');
     }
 
     var start = function() {
