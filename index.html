@@ -58,6 +58,12 @@
 
     var TWO_PI = Math.PI * 2;
 
+    drawVec = function(ctx, from, to, color){
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+    }
+
     var StateMachine = function(state) {
         this.beforeHandlers = {};
         this.whileHandlers = {};
@@ -84,7 +90,9 @@
     };
 
     StateMachine.prototype.go = function() {
-        this.whileHandlers[this.state].call(this);
+        if (this.whileHandlers.hasOwnProperty(this.state)) {
+            this.whileHandlers[this.state].call(this);
+        }
     }
 
     var Ball = function(pos) {
@@ -141,22 +149,61 @@
         }
     };
 
+    var Peg = function(pos) {
+        this.pos = pos;
+        this.size = 10;
+        this.fill = 'pink';
+    }
+
+    Peg.prototype.hit = function(ball) {
+        var ballpos = ball.pos.get();
+        var pegpos = this.pos.get();
+
+        var dist = Vector2d.dist(ballpos, pegpos);
+
+        if (dist <= (this.size + ball.size)) {
+            ball.pos.add(Vector2d.sub(ball.pos, peg.pos));
+            var vel = ball.vel.get();
+            ball.vel.zero();
+            ball.acc.zero();
+            ball.vel.set(Vector2d.sub(ball.pos, peg.pos).get().normalize().scale(vel.mag() / 1.5));
+        }
+    };
+
+    Peg.prototype.draw = function(ctx) {
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.beginPath();
+        ctx.scale(this.size, this.size);
+        ctx.arc(0,0, 1, 0, TWO_PI);
+        ctx.fillStyle = this.fill;
+        ctx.fill();
+        ctx.restore();
+    };
+
+
     var ctx = canvas.getContext('2d');
     var playBtn = document.querySelector('.poster');
-    var ball;
+    var ball, peg;
     var pos;
 
     var newBall = function() {
-        pos = new Vector2d(250, 50);
+        pos = new Vector2d(250 + ((Math.random() * 4) - 2), 50);
         ball = new Ball(pos);
+    }
+
+    var newPeg = function() {
+        peg = new Peg(new Vector2d(250, 250));
     }
 
     var run = function() {
         requestAnimationFrame(run);
-        ctx.clearRect(0, 0, 500, 500);
         if (ball.state === 'DEAD') {
             newBall();
-        } else {
+        } else if (ball.state !== 'PAUSE') {
+            ctx.clearRect(0, 0, 500, 500);
+            peg.draw(ctx);
+            peg.hit(ball);
             ball.update();
             ball.draw(ctx);
         }
@@ -171,6 +218,7 @@
     var start = function() {
         hidePoster();
         newBall();
+        newPeg();
         run();
     }
 
