@@ -64,6 +64,46 @@
         ctx.stroke();
     }
 
+    var Region = function(pos, dims, depth) {
+        this.pos = pos;
+        this.dims = dims;
+        this.contents = [];
+        this.subregions = [];
+        if (depth) {
+            this.subregions = this.subdivide(this.pos, this.dims, --depth);
+        }
+    }
+
+    Region.prototype.subdivide = function(pos, dims, depth) {
+        var halfx = dims.x / 2;
+        var halfy = dims.y / 2;
+        return [
+            new Region(pos.get(), dims.get().div(2), depth),
+            new Region(pos.get().addCoords(halfx, 0), dims.get().div(2), depth),
+            new Region(pos.get().addCoords(0, halfy), dims.get().div(2), depth),
+            new Region(pos.get().addCoords(halfx, halfy), dims.get().div(2), depth),
+        ]
+    }
+
+    Region.prototype.place = function(pos, item) {
+        if (this.hits(pos)) {
+            if (this.subregions.length) {
+                for (var i = 0; i < this.subregions.length; i++) {
+                    this.subregions[i].place(pos, item);
+                }
+            } else {
+                this.contents.push[item];
+            }
+        }
+    }
+
+    Region.prototype.hits = function(pos) {
+        return (pos.x > this.pos.x
+            && pos.x < this.pos.x + this.dims.x
+            && pos.y > this.pos.y
+            && pos.y < this.pos.y + this.dims.y);
+    }
+
     var StateMachine = function(state) {
         this.beforeHandlers = {};
         this.whileHandlers = {};
@@ -184,7 +224,7 @@
 
     var ctx = canvas.getContext('2d');
     var playBtn = document.querySelector('.poster');
-    var ball, peg;
+    var ball, region;
     var pos;
 
     var newBall = function() {
@@ -209,6 +249,23 @@
         }
     }
 
+    var layoutBoard = function(width, height, spacing) {
+        region = new Region(new Vector2d(), new Vector2d(500, 500), 3);
+
+        var pegs = [];
+        var peg;
+
+        for (var x = spacing ; x < width; x += spacing) {
+            for (var y = spacing * 3; y < height; y += spacing) {
+                peg = new Peg(new Vector2d(x, y))
+                peg.draw(ctx);
+                region.place(peg.pos, peg);
+                pegs.push(peg);
+            }
+        }
+
+    };
+
     var hidePoster = function() {
         playBtn.innerHTML = '';
         playBtn.classList.add('disolve');
@@ -217,12 +274,13 @@
 
     var start = function() {
         hidePoster();
-        newBall();
-        newPeg();
-        run();
+        // newBall();
+        // newPeg();
+        // run();
     }
 
-    playBtn.addEventListener('click', start);
+    layoutBoard(500, 500, 50);
 
+    playBtn.addEventListener('click', start);
 
 </script>

@@ -21,8 +21,8 @@ THE SOFTWARE.
 */
 
 var Vector2d = function(x, y) {
-    this.x = x;
-    this.y = y;
+    this.x = x || 0;
+    this.y = y || 0;
 }
 Vector2d.prototype = {
 
@@ -44,8 +44,8 @@ Vector2d.prototype = {
     },
 
     setCoords: function(x, y) {
-        this.x = x;
-        this.y = y;
+        this.x = x || this.x;
+        this.y = y || this.y;
         return this;
     },
     
