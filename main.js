@@ -142,7 +142,7 @@
         this.initStates();
         this.acc = new Vector2d(0, 0);
         this.vel = new Vector2d(0, 0);
-        this.gravity = new Vector2d(0, .9);
+        this.gravity = new Vector2d(0, .8);
     };
 
     Ball.prototype = new StateMachine;
