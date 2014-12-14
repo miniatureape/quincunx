@@ -1,11 +1,6 @@
 (function() {
-    var TWO_PI = Math.PI * 2;
 
-    drawVec = function(ctx, from, to, color){
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
-        ctx.stroke();
-    }
+    var TWO_PI = Math.PI * 2;
 
     var Region = function(pos, dims, depth) {
         this.pos = pos;
