@@ -35,10 +35,21 @@ canvas {
 .disolve {
     -webkit-animation-duration: 1s;
     -webkit-animation-name: disolve;
-    -webkit-animation-fill-mode:forwards
+    -webkit-animation-fill-mode: forwards;
+    animation-duration: 1s;
+    animation-name: disolve;
+    animation-fill-mode: forwards;
 }
 
 @-webkit-keyframes disolve {
+    from {
+        background-color: rgba(164,188,194, 1);
+    }
+    to {
+        background-color: rgba(164,188,194, 0);
+    }
+}
+@keyframes disolve {
     from {
         background-color: rgba(164,188,194, 1);
     }
