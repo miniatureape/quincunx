@@ -2,82 +2,6 @@
 
     var TWO_PI = Math.PI * 2;
 
-    var Region = function(pos, dims, depth) {
-        this.pos = pos;
-        this.dims = dims;
-        this.contents = [];
-        this.subregions = [];
-        if (depth) {
-            this.subregions = this.subdivide(this.pos, this.dims, --depth);
-        }
-    }
-
-    Region.prototype.subdivide = function(pos, dims, depth) {
-        var halfx = dims.x / 2;
-        var halfy = dims.y / 2;
-        return [
-            new Region(pos.get(), dims.get().div(2), depth),
-            new Region(pos.get().addCoords(halfx, 0), dims.get().div(2), depth),
-            new Region(pos.get().addCoords(0, halfy), dims.get().div(2), depth),
-            new Region(pos.get().addCoords(halfx, halfy), dims.get().div(2), depth),
-        ]
-    }
-
-    Region.prototype.debug = function() {
-        ctx.strokeRect(this.pos.x, this.pos.y, this.dims.x, this.dims.y);
-        this.contents.forEach(function(peg) { 
-            peg.debug()
-        })
-    }
-
-    Region.prototype.place = function(pos, item) {
-        if (this.hits(pos)) {
-            if (this.subregions.length) {
-                for (var i = 0; i < this.subregions.length; i++) {
-                    this.subregions[i].place(pos, item);
-                }
-            } else {
-                this.contents.push(item);
-            }
-        }
-    }
-
-    Region.prototype.find = function(pos) {
-
-        if (!this.hits(pos)) {
-            return false;
-        }
-
-        if (this.hits(pos) && !this.subregions.length) {
-            return this;
-        }
-
-        for (var i = 0; i < this.subregions.length; i++) {
-            var found = this.subregions[i].find(pos)
-            if (found) {
-                return found;
-            }
-        }
-    }
-
-    Region.prototype.hits = function(pos) {
-        return (pos.x >= this.pos.x
-            && pos.x <= this.pos.x + this.dims.x
-            && pos.y >= this.pos.y
-            && pos.y <= this.pos.y + this.dims.y);
-    }
-
-    Region.prototype.hitsContents = function(pos) {
-        var result = null;
-        var hit = false;
-        for (var i = 0; i < this.contents.length; i++) {
-            hit = this.contents[i].hit(pos);
-            if (hit) {
-                return hit;
-            }
-        }
-    }
-
     var StateMachine = function(state) {
         this.beforeHandlers = {};
         this.whileHandlers = {};
@@ -109,6 +33,105 @@
         }
     }
 
+    /*
+     * Region is a square containing subregions to some depth.
+     * A region can contain pegs as contents. 
+     *
+     * They're used so you don't have to hit test the entire set of pegs.
+     */
+
+    var Region = function(pos, dims, depth) {
+        this.pos = pos;
+        this.dims = dims;
+        this.contents = [];
+        this.subregions = [];
+
+        if (depth) {
+            this.subregions = this.subdivide(this.pos, this.dims, --depth);
+        }
+
+    }
+
+    Region.prototype.subdivide = function(pos, dims, depth) {
+        var halfx = dims.x / 2;
+        var halfy = dims.y / 2;
+        return [
+            new Region(pos.get(), dims.get().div(2), depth),
+            new Region(pos.get().addCoords(halfx, 0), dims.get().div(2), depth),
+            new Region(pos.get().addCoords(0, halfy), dims.get().div(2), depth),
+            new Region(pos.get().addCoords(halfx, halfy), dims.get().div(2), depth),
+        ]
+    }
+
+    Region.prototype.debug = function() {
+        ctx.strokeRect(this.pos.x, this.pos.y, this.dims.x, this.dims.y);
+        this.contents.forEach(function(peg) { 
+            peg.debug()
+        })
+    }
+
+    // Given a position an item, place the item into the contents of the 
+    // bottom-most region.
+    
+    Region.prototype.place = function(pos, item) {
+        if (this.hits(pos)) {
+            if (this.subregions.length) {
+                for (var i = 0; i < this.subregions.length; i++) {
+                    this.subregions[i].place(pos, item);
+                }
+            } else {
+                this.contents.push(item);
+            }
+        }
+    }
+
+    // Find the bottom-most subregion given a position 
+    
+    Region.prototype.find = function(pos) {
+
+        if (!this.hits(pos)) {
+            return false;
+        }
+
+        if (this.hits(pos) && !this.subregions.length) {
+            return this;
+        }
+
+        for (var i = 0; i < this.subregions.length; i++) {
+            var found = this.subregions[i].find(pos)
+            if (found) {
+                return found;
+            }
+        }
+    }
+
+    // Does a pos fall within this region?
+    
+    Region.prototype.hits = function(pos) {
+        return (pos.x >= this.pos.x
+            && pos.x <= this.pos.x + this.dims.x
+            && pos.y >= this.pos.y
+            && pos.y <= this.pos.y + this.dims.y);
+    }
+
+    // Check a position against the hit function all any region 
+    // contents.
+    
+    Region.prototype.hitsContents = function(ball) {
+        var result = null;
+        var hit = false;
+        for (var i = 0; i < this.contents.length; i++) {
+            hit = this.contents[i].hit(ball);
+            if (hit) {
+                return hit;
+            }
+        }
+    }
+
+    // View methods and state representing an object that grows from
+    // a pixel and then begins falling.
+    // For simplicity, they force of gravity is contained within.
+    
     var Ball = function(pos) {
         this.pos = pos;
         this.size = 1;
@@ -163,6 +186,9 @@
         }
     };
 
+    // Model and view functions for an obstacle the ball may meet and 
+    // bounce off of.
+
     var Peg = function(pos) {
         this.pos = pos;
         this.size = 5;
@@ -180,8 +206,8 @@
         ctx.restore();
     }
 
-    Peg.prototype.hit = function(pos) {
-        var ballpos = pos;
+    Peg.prototype.hit = function(ball) {
+        var ballpos = ball.pos.get();
         var pegpos = this.pos.get();
 
         var dist = Vector2d.dist(ballpos, pegpos);
@@ -238,13 +264,13 @@
 
         // If it does, check to see if any of those pegs
         // actually hit the ball.
-        var peg = region.hitsContents(ball.pos);
+        var peg = region.hitsContents(ball);
         if (peg) {
             ball.pos.add(Vector2d.sub(ball.pos, peg.pos));
             var vel = ball.vel.get();
             ball.vel.zero();
             ball.acc.zero();
-            ball.vel.set(Vector2d.sub(ball.pos, peg.pos).get().normalize().scale(vel.mag() / 1.5));
+            ball.vel.set(Vector2d.sub(ball.pos, peg.pos).get().normalize().scale(vel.mag() / 1.2));
             peg.numHits++;
         }
 
