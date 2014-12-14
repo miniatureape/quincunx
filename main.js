@@ -142,7 +142,7 @@
         this.initStates();
         this.acc = new Vector2d(0, 0);
         this.vel = new Vector2d(0, 0);
-        this.gravity = new Vector2d(0, .8);
+        this.gravity = new Vector2d(0, .9);
     };
 
     Ball.prototype = new StateMachine;
@@ -270,7 +270,7 @@
             var vel = ball.vel.get();
             ball.vel.zero();
             ball.acc.zero();
-            ball.vel.set(Vector2d.sub(ball.pos, peg.pos).get().normalize().scale(vel.mag() / 1.2));
+            ball.vel.set(Vector2d.sub(ball.pos, peg.pos).get().normalize().scale(vel.mag() / 1.5));
             peg.numHits++;
         }
 
