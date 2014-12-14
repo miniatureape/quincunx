@@ -1,25 +1,27 @@
 
 body {
     font-family: Helvetica, sans-serif;
-    color: 
+    background: #E8F3F8;
+}
+
+.container {
+    margin: 0 auto;
+    position: relative;
+    width: 500px;
+    height: 500px;
 }
 
 canvas {
     background: #DBE6EC;
 }
 
-.container {
-    position: relative;
-    width: 500px;
-    height: 500px;
-}
 
 .poster {
     box-sizing: border-box;
     position: absolute;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 1);
+    background-color: rgba(164,188,194, 1);
     color: #eee;
     font-weight: bold;
     padding-top: 240px;
@@ -37,11 +39,11 @@ canvas {
 @-webkit-keyframes disolve {
 
     from {
-        background-color: rgba(0, 0, 0, 1);
+        background-color: rgba(164,188,194, 1);
     }
 
     to {
-        background-color: rgba(0, 0, 0, 0);
+        background-color: rgba(164,188,194, 0);
     }
 
 }
